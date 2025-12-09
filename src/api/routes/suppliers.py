@@ -3,6 +3,8 @@ from marshmallow import ValidationError
 from src.api.utils.responses import response_with
 from src.api.utils import responses as resp
 from src.api.schemas.all_schemas import supplier_schema, suppliers_schema
+from src.api.utils.database import db
+from src.api.models.suppliers import Supplier
 
 
 supplier_routes = Blueprint("supplier_routes", __name__)
@@ -35,3 +37,25 @@ def create_supplier():
         print(f"Database error during creation: {e}")
         return response_with(resp.INVALID_INPUT_422, message="Database creation error")
     return suppliers_schema.dump(created_suppliers), 201
+
+
+@supplier_routes.route('/', methods=['GET'])
+def get_supplier_list():
+    # SQLAlchemy 2.0 style query execution
+    # db.select(Supplier) creates the SELECT statement object
+    # db.session.execute runs it
+    # .scalars() gets the results as model objects
+    # .all() gets all results in a list
+    fetched = db.session.execute(db.select(Supplier)).scalars().all()
+    output = suppliers_schema.dump(fetched)
+    return output, 201
+
+
+@supplier_routes.route('/<int:id>', methods=['GET'])
+def get_supplier(id):
+    supplier = db.session.get(Supplier, id)
+    if supplier is None:
+        return response_with(resp.SERVER_ERROR_404, message=f"Supplier with id {id} not found")
+
+    output = supplier_schema.dump(supplier)
+    return output, 200

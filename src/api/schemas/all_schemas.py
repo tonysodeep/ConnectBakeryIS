@@ -6,11 +6,17 @@ from marshmallow import EXCLUDE, fields
 
 
 class GoodsSchema(SQLAlchemyAutoSchema):
+    supplier = fields.Nested(
+        'SupplierSchema',
+        only=['name', 'phone_number']
+    )
+
     class Meta:
+        ordered = True
         model = Goods
         load_instance = True
         fields = ('id', 'name', 'material_code', 'convert_rate',
-                  'goods_unit', 'supplier_id')
+                  'goods_unit', 'supplier')
         dump_only = ('id',)
         include_fk = True
         sqla_session = db.session
@@ -25,6 +31,7 @@ class SupplierSchema(SQLAlchemyAutoSchema):
     )
 
     class Meta:
+        ordered = True
         model = Supplier
         load_instance = True
         fields = ('id', 'name', 'email', 'phone_number', 'address', 'goods')

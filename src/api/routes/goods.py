@@ -4,6 +4,7 @@ from src.api.utils.responses import response_with
 from src.api.utils import responses as resp
 from src.api.models.goods import Goods
 from src.api.schemas.all_schemas import goods_schema, list_goods_schema
+from src.api.utils.database import db
 
 
 goods_routes = Blueprint("goods_routes", __name__)
@@ -36,3 +37,20 @@ def create_goods():
         print(f"Database error during creation: {e}")
         return response_with(resp.INVALID_INPUT_422, message="Database creation error")
     return list_goods_schema.dump(created_goods), 201
+
+
+@goods_routes.route('/', methods=['GET'])
+def get_goods_list():
+    fetched = db.session.execute(db.select(Goods)).scalars().all()
+    output = list_goods_schema.dump(fetched)
+    return output, 201
+
+
+@goods_routes.route('/<int:id>', methods=['GET'])
+def get_goods(id):
+    goods = db.session.get(Goods, id)
+    if goods is None:
+        return response_with(resp.SERVER_ERROR_404, message=f"Goods with id {id} not found")
+
+    output = goods_schema.dump(goods)
+    return output, 200

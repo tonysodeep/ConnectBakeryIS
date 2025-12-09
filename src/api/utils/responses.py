@@ -55,7 +55,9 @@ def response_with(response, value=None, message=None, error=None, headers={}, pa
     if value is not None:
         result.update(value)
 
-    if response.get('message', None) is not None:
+    if message is not None:
+        result.update({'message': message})
+    elif response.get('message', None) is not None:
         result.update({'message': response['message']})
 
     result.update({'code': response['code']})
