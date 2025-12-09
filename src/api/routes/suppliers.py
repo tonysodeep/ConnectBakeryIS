@@ -52,10 +52,76 @@ def get_supplier_list():
 
 
 @supplier_routes.route('/<int:id>', methods=['GET'])
-def get_supplier(id):
+def get_supplier_by_id(id):
     supplier = db.session.get(Supplier, id)
     if supplier is None:
         return response_with(resp.SERVER_ERROR_404, message=f"Supplier with id {id} not found")
 
     output = supplier_schema.dump(supplier)
+    return output, 200
+
+
+@supplier_routes.route('/<int:id>', methods=['PUT'])
+def update_supplier_by_id(id):
+    json_data = request.get_json()
+    if json_data is None:
+        return response_with(resp.INVALID_INPUT_422, message="No input data provided")
+
+    existing_supplier = db.session.get(Supplier, id)
+    if existing_supplier is None:
+        return response_with(resp.SERVER_ERROR_404, message=f"Supplier with id {id} not found")
+
+    try:
+        updated_supplier_instance = supplier_schema.load(
+            json_data,
+            instance=existing_supplier,
+            partial=True
+        )
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Database error during creation: {e}")
+        return response_with(resp.INVALID_INPUT_422, message="Database creation error")
+
+    output = supplier_schema.dump(updated_supplier_instance)
+    return output, 201
+
+
+@supplier_routes.route('/', methods=['PUT'])
+def update_supplier_by_list():
+    json_data = request.get_json()
+    if not isinstance(json_data, list):
+        return response_with(resp.INVALID_INPUT_422, message="Expected a list of suppliers for bulk update.")
+
+    if not json_data:
+        return response_with(resp.INVALID_INPUT_422, message="Input list is empty.")
+
+    updated_suppliers_list = []
+    try:
+        for item_data in json_data:
+            supplier_id = item_data.get('id')
+            if supplier_id is None:
+                db.session.rollback()
+                return response_with(resp.INVALID_INPUT_422, message=f"Missing 'id' field in one of the supplier objects.")
+
+            existing_supplier = db.session.get(Supplier, supplier_id)
+            if existing_supplier is None:
+                db.session.rollback()
+                return response_with(resp.SERVER_ERROR_404,
+                                     message=f"Supplier with id {supplier_id} not found, aborting bulk update.")
+
+            updated_supplier = supplier_schema.load(
+                item_data,
+                instance=existing_supplier,
+                partial=True
+            )
+            updated_suppliers_list.append(updated_supplier)
+
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Database error during bulk update: {e}")
+        return response_with(resp.INVALID_INPUT_422, message=f"Database update error: {str(e)}")
+
+    output = suppliers_schema.dump(updated_suppliers_list)
     return output, 200
