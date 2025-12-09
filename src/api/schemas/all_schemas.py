@@ -1,11 +1,19 @@
 # Imports the models only AFTER they are all registered via models.__init__
-from src.api.models import Supplier, Goods
+from src.api.models import Supplier, Goods, Invoice, InvoiceGoods
 from src.api.utils.database import db
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 from marshmallow import EXCLUDE, fields
 
 
+class DecimalToString(fields.Decimal):
+    def _serialize(self, value, attr, obj, **kwargs):
+        if value is None:
+            return None
+        return str(value)
+
+
 class GoodsSchema(SQLAlchemyAutoSchema):
+    convert_rate = DecimalToString(as_string=True)
     supplier = fields.Nested(
         'SupplierSchema',
         only=['name', 'phone_number']
@@ -16,7 +24,7 @@ class GoodsSchema(SQLAlchemyAutoSchema):
         model = Goods
         load_instance = True
         fields = ('id', 'name', 'material_code', 'convert_rate',
-                  'goods_unit', 'supplier_id')
+                  'goods_unit', 'supplier_id', 'supplier')
         dump_only = ('id',)
         include_fk = True
         sqla_session = db.session
@@ -41,7 +49,53 @@ class SupplierSchema(SQLAlchemyAutoSchema):
         unknown = EXCLUDE
 
 
+class InvoiceSchema(SQLAlchemyAutoSchema):
+    supplier = fields.Nested(
+        SupplierSchema,
+        only=['name']
+    )
+
+    class Meta:
+        ordered = True
+        model = Invoice
+        load_instance = True
+        fields = ('id', 'code', 'created_date', 'supplier_id', 'supplier')
+        dump_only = ('id',)
+        include_fk = True
+        sqla_session = db.session
+        unknown = EXCLUDE
+
+
+class InvoiceGoodsSchema(SQLAlchemyAutoSchema):
+    buy_quantity = DecimalToString(as_string=True)
+    buying_price_per_unit = DecimalToString(as_string=True)
+    vat_precentage = DecimalToString(as_string=True)
+    invoice = fields.Nested(
+        InvoiceSchema,
+        only=['code', 'created_date']
+    )
+    goods = fields.Nested(
+        GoodsSchema,
+        only=['name', 'material_code']
+    )
+
+    class Meta:
+        ordered = True
+        model = InvoiceGoods
+        load_instance = True
+        fields = ('id', 'invoice_id', 'goods_id',
+                  'buy_quantity', 'buying_price_per_unit', 'vat_precentage', 'invoice', 'goods')
+        dump_only = ('id',)
+        include_fk = True
+        sqla_session = db.session
+        unknown = EXCLUDE
+
+
 supplier_schema = SupplierSchema()
 suppliers_schema = SupplierSchema(many=True)
 goods_schema = GoodsSchema()
 list_goods_schema = GoodsSchema(many=True)
+invoice_schema = InvoiceSchema()
+invoices_schema = InvoiceSchema(many=True)
+invoice_goods_schema = InvoiceGoodsSchema()
+list_invoice_goods_schema = InvoiceGoodsSchema(many=True)

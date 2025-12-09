@@ -16,6 +16,10 @@ class Supplier (db.Model):
         back_populates='supplier',
         cascade="all, delete-orphan"
     )
+    invoices: Mapped[List['Invoice']] = relationship(  # type: ignore
+        'Invoice',
+        back_populates='supplier'
+    )
 
     def __init__(self, name, email=None, phone_number=None, address=None):
         self.name = name

@@ -1,3 +1,4 @@
+from typing import List
 from src.api.utils.database import db
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Float, ForeignKey
@@ -16,6 +17,13 @@ class Goods (db.Model):
     supplier: Mapped['Supplier'] = relationship(  # type: ignore
         'Supplier',
         back_populates="goods")
+    list_of_invoices: Mapped[List['Invoice']] = relationship(  # type: ignore
+        secondary='invoices_goods', back_populates='list_of_goods'
+    )
+    goods_associations: Mapped[List['InvoiceGoods']] = relationship(  # type: ignore
+        back_populates="goods",
+        overlaps="list_of_invoices"
+    )
 
     def __init__(self, name, material_code, convert_rate, goods_unit, supplier_id):
         self.name = name

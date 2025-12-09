@@ -80,7 +80,7 @@ def update_goods_by_id(id):
         return response_with(resp.INVALID_INPUT_422, message="Database creation error")
 
     output = goods_schema.dump(updated_goods_instance)
-    return output, 201
+    return output, 200
 
 
 @goods_routes.route('/', methods=['PUT'])
