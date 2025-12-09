@@ -45,7 +45,7 @@ class SupplierSchema(SQLAlchemyAutoSchema):
     invoices = fields.Nested(
         'InvoiceSchema',
         many=True,
-        only=['list_of_bought_goods']
+        only=['code', 'created_date']
     )
 
     class Meta:
@@ -88,6 +88,7 @@ class InvoiceGoodsSchema(SQLAlchemyAutoSchema):
     buy_quantity = DecimalToString(as_string=True)
     buying_price_per_unit = DecimalToString(as_string=True)
     vat_precentage = DecimalToString(as_string=True)
+    invoice_id = fields.Integer(required=False, load_only=True)
     invoice = fields.Nested(
         InvoiceSchema,
         only=['code', 'created_date']

@@ -7,6 +7,7 @@ from src.api.utils.responses import response_with
 import src.api.utils.responses as resp
 from src.api.routes.suppliers import supplier_routes
 from src.api.routes.goods import goods_routes
+from src.api.routes.invoices import invoice_routes
 
 app = Flask(__name__)
 
@@ -25,6 +26,7 @@ with app.app_context():
 app.register_blueprint(supplier_routes, url_prefix='/api/suppliers')
 app.register_blueprint(goods_routes,
                        url_prefix='/api/goods')
+app.register_blueprint(invoice_routes, url_prefix='/api/invoices')
 
 
 @app.after_request

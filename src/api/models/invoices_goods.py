@@ -22,7 +22,7 @@ class InvoiceGoods(db.Model):
         back_populates='purchased_history',
     )
 
-    def __init__(self, invoice_id, goods_id, buy_quantity, buying_price_per_unit, vat_precentage=None):
+    def __init__(self, goods_id, buy_quantity, buying_price_per_unit, vat_precentage=None, invoice_id=None):
         self.invoice_id = invoice_id
         self.goods_id = goods_id
         self.buy_quantity = buy_quantity
