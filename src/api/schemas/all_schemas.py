@@ -16,7 +16,7 @@ class GoodsSchema(SQLAlchemyAutoSchema):
         model = Goods
         load_instance = True
         fields = ('id', 'name', 'material_code', 'convert_rate',
-                  'goods_unit', 'supplier')
+                  'goods_unit', 'supplier_id')
         dump_only = ('id',)
         include_fk = True
         sqla_session = db.session

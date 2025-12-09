@@ -125,3 +125,20 @@ def update_supplier_by_list():
 
     output = suppliers_schema.dump(updated_suppliers_list)
     return output, 200
+
+
+@supplier_routes.route('/<int:id>', methods=['DELETE'])
+def delete_supplier_by_id(id):
+    existing_supplier = db.session.get(Supplier, id)
+    if existing_supplier is None:
+        return response_with(resp.SERVER_ERROR_404, message=f"Supplier with id {id} not found")
+
+    try:
+        db.session.delete(existing_supplier)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Database error during delete: {e}")
+        return response_with(resp.INVALID_INPUT_422, message=f"Database delete error: {str(e)}")
+
+    return response_with(resp.SUCCESS_204, message=f'Delete succeess supplier with id {id}')

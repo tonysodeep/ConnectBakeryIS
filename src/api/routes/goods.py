@@ -121,3 +121,20 @@ def update_goods_by_list():
 
     output = list_goods_schema.dump(updated_goods_list)
     return output, 200
+
+
+@goods_routes.route('/<int:id>', methods=['DELETE'])
+def delete_goods_by_id(id):
+    existing_goods = db.session.get(Goods, id)
+    if existing_goods is None:
+        return response_with(resp.SERVER_ERROR_404, message=f"Goods with id {id} not found")
+
+    try:
+        db.session.delete(existing_goods)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Database error during delete: {e}")
+        return response_with(resp.INVALID_INPUT_422, message=f"Database delete error: {str(e)}")
+
+    return response_with(resp.SUCCESS_204, message=f'Delete succeess goods with id {id}')
