@@ -16,12 +16,10 @@ class InvoiceGoods(db.Model):
     vat_precentage: Mapped[Decimal] = mapped_column(
         DECIMAL(precision=5, scale=3), nullable=True)
     invoice: Mapped['Invoice'] = relationship(  # type: ignore
-        back_populates='invoice_associations',
-        overlaps="list_of_goods,list_of_invoices"
+        back_populates='list_of_bought_goods',
     )
     goods: Mapped['Goods'] = relationship(  # type: ignore
-        back_populates='goods_associations',
-        overlaps="list_of_goods,list_of_invoices"
+        back_populates='purchased_history',
     )
 
     def __init__(self, invoice_id, goods_id, buy_quantity, buying_price_per_unit, vat_precentage=None):

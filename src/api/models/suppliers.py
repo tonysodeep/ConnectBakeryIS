@@ -14,7 +14,6 @@ class Supplier (db.Model):
     goods: Mapped[List['Goods']] = relationship(  # type: ignore
         'Goods',
         back_populates='supplier',
-        cascade="all, delete-orphan"
     )
     invoices: Mapped[List['Invoice']] = relationship(  # type: ignore
         'Invoice',

@@ -18,13 +18,18 @@ class GoodsSchema(SQLAlchemyAutoSchema):
         'SupplierSchema',
         only=['name', 'phone_number']
     )
+    purchased_history = fields.List(fields.Nested(
+        'InvoiceGoodsSchema',
+        only=['invoice', 'buy_quantity',
+              'buying_price_per_unit', 'vat_precentage']
+    ))
 
     class Meta:
         ordered = True
         model = Goods
         load_instance = True
         fields = ('id', 'name', 'material_code', 'convert_rate',
-                  'goods_unit', 'supplier_id', 'supplier')
+                  'goods_unit', 'supplier_id', 'supplier', 'purchased_history')
         dump_only = ('id',)
         include_fk = True
         sqla_session = db.session
@@ -37,12 +42,18 @@ class SupplierSchema(SQLAlchemyAutoSchema):
         many=True,
         only=['name', 'material_code']
     )
+    invoices = fields.Nested(
+        'InvoiceSchema',
+        many=True,
+        only=['list_of_bought_goods']
+    )
 
     class Meta:
         ordered = True
         model = Supplier
         load_instance = True
-        fields = ('id', 'name', 'email', 'phone_number', 'address', 'goods')
+        fields = ('id', 'name', 'email', 'phone_number',
+                  'address', 'goods', 'invoices')
         dump_only = ('id',)
         include_fk = True
         sqla_session = db.session
@@ -55,11 +66,18 @@ class InvoiceSchema(SQLAlchemyAutoSchema):
         only=['name']
     )
 
+    list_of_bought_goods = fields.List(fields.Nested(
+        'InvoiceGoodsSchema',
+        only=['goods', 'buy_quantity',
+              'buying_price_per_unit', 'vat_precentage']
+    ))
+
     class Meta:
         ordered = True
         model = Invoice
         load_instance = True
-        fields = ('id', 'code', 'created_date', 'supplier_id', 'supplier')
+        fields = ('id', 'code', 'created_date',
+                  'supplier_id', 'supplier', 'list_of_bought_goods')
         dump_only = ('id',)
         include_fk = True
         sqla_session = db.session

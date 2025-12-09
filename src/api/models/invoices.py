@@ -19,13 +19,8 @@ class Invoice (db.Model):
     supplier: Mapped['Supplier'] = relationship(  # type: ignore
         'Supplier',
         back_populates="invoices")
-    list_of_goods: Mapped[List['Goods']] = relationship(  # type: ignore
-        secondary='invoices_goods', back_populates='list_of_invoices',
-        overlaps="goods_associations"
-    )
-    invoice_associations: Mapped[List['InvoiceGoods']] = relationship(  # type: ignore
+    list_of_bought_goods: Mapped[List['InvoiceGoods']] = relationship(  # type: ignore
         back_populates="invoice",
-        overlaps="list_of_goods,list_of_invoices"
     )
 
     def __init__(self, code, created_date, supplier_id):
