@@ -42,11 +42,10 @@ class SupplierSchema(SQLAlchemyAutoSchema):
         many=True,
         only=['name', 'material_code']
     )
-    invoices = fields.Nested(
+    invoices = fields.List(fields.Nested(
         'InvoiceSchema',
-        many=True,
-        only=['code', 'created_date']
-    )
+        only=['id', 'list_of_bought_goods']
+    ))
 
     class Meta:
         ordered = True

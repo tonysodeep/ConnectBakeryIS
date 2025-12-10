@@ -21,6 +21,7 @@ class Invoice (db.Model):
         back_populates="invoices")
     list_of_bought_goods: Mapped[List['InvoiceGoods']] = relationship(  # type: ignore
         back_populates="invoice",
+        cascade="all, delete-orphan"
     )
 
     def __init__(self, code, created_date, supplier_id):
