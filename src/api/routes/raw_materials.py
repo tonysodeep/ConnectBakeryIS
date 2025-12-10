@@ -9,7 +9,7 @@ from src.api.utils.database import db
 raw_material_routes = Blueprint("raw_material_routes", __name__)
 
 
-@raw_material_routes.route('/prices/', methods=['GET'])
+@raw_material_routes.route('/rm-invoice-prices/', methods=['GET'])
 def get_raw_materials_buying_prices():
     try:
         results = db.session.execute(
@@ -35,7 +35,7 @@ def get_raw_materials_buying_prices():
         return response_with(resp.SERVER_ERROR_500, message="An error occurred during price calculation.")
 
 
-@raw_material_routes.route('/stock/', methods=['GET'])
+@raw_material_routes.route('/rm-invoices-stock/', methods=['GET'])
 def get_raw_materials_invoice_stock():
     try:
         results = db.session.execute(
