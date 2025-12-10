@@ -6,6 +6,7 @@ from decimal import Decimal
 
 class InvoiceGoods(db.Model):
     __tablename__ = 'invoices_goods'
+    
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     invoice_id: Mapped[int] = mapped_column(ForeignKey('invoices.id'))
     goods_id: Mapped[int] = mapped_column(ForeignKey('goods.id'))

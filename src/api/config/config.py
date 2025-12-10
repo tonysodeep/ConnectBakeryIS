@@ -11,7 +11,10 @@ class ProductionConfig(Config):
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = 'mysql+mysqlconnector://root:tgof5569A@localhost:3306/testdb2'
+    SQLALCHEMY_DATABASE_URI = 'mysql+mysqlconnector://root:tgof5569A@localhost:3306/PMS'
+    SQLALCHEMY_BINDS = {
+        'IMS_db': 'mysql+mysqlconnector://root:tgof5569A@localhost:3306/IMS'
+    }
     SQLALCHEMY_ECHO = False
     JSON_SORT_KEYS = False
 

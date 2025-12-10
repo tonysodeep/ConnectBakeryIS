@@ -6,6 +6,7 @@ from sqlalchemy import String
 
 class Supplier (db.Model):
     __tablename__ = 'suppliers'
+
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     email: Mapped[str] = mapped_column(String(60), nullable=True)

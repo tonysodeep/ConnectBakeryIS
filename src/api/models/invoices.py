@@ -7,6 +7,7 @@ from sqlalchemy import String, Date, ForeignKey, func
 
 class Invoice (db.Model):
     __tablename__ = 'invoices'
+
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     code: Mapped[str] = mapped_column(String(100), nullable=False)
     created_date: Mapped[date] = mapped_column(

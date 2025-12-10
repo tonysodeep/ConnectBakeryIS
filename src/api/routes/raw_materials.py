@@ -1,8 +1,7 @@
 from flask import Blueprint, request
 from src.api.utils.responses import response_with
 from src.api.utils import responses as resp
-from src.api.models.goods import Goods
-from src.api.models.invoices_goods import InvoiceGoods
+from src.api.models import Goods, InvoiceGoods
 from sqlalchemy import func, Float
 from src.api.utils.database import db
 

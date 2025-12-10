@@ -5,10 +5,7 @@ from src.api.utils.database import db
 from src.api.config.config import ProductionConfig, DevelopmentConfig, TestingConfig
 from src.api.utils.responses import response_with
 import src.api.utils.responses as resp
-from src.api.routes.suppliers import supplier_routes
-from src.api.routes.goods import goods_routes
-from src.api.routes.invoices import invoice_routes
-from src.api.routes.raw_materials import raw_material_routes
+from src.api.routes import supplier_routes, goods_routes, invoice_routes, raw_material_routes, stocks_routes
 
 app = Flask(__name__)
 
@@ -20,15 +17,16 @@ else:
     app_config = DevelopmentConfig
 
 app.config.from_object(app_config)
-
 db.init_app(app)
 with app.app_context():
     db.create_all()
+
 app.register_blueprint(supplier_routes, url_prefix='/api/suppliers')
 app.register_blueprint(goods_routes,
                        url_prefix='/api/goods')
 app.register_blueprint(invoice_routes, url_prefix='/api/invoices')
 app.register_blueprint(raw_material_routes, url_prefix='/api/raw-materials')
+app.register_blueprint(stocks_routes, url_prefix='/api/stock')
 
 
 @app.after_request

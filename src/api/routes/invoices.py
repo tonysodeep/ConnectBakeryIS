@@ -4,7 +4,7 @@ from src.api.utils.responses import response_with
 from src.api.utils import responses as resp
 from src.api.schemas.all_schemas import invoice_schema, list_invoice_goods_schema, invoices_schema, invoice_goods_schema
 from src.api.utils.database import db
-from src.api.models.invoices import Invoice
+from src.api.models import Invoice
 
 
 invoice_routes = Blueprint("invoice_routes", __name__)

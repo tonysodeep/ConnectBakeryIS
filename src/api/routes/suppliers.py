@@ -4,7 +4,7 @@ from src.api.utils.responses import response_with
 from src.api.utils import responses as resp
 from src.api.schemas.all_schemas import supplier_schema, suppliers_schema
 from src.api.utils.database import db
-from src.api.models.suppliers import Supplier
+from src.api.models import Supplier
 
 
 supplier_routes = Blueprint("supplier_routes", __name__)

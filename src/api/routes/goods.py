@@ -2,7 +2,7 @@ from flask import Blueprint, request
 from marshmallow import ValidationError
 from src.api.utils.responses import response_with
 from src.api.utils import responses as resp
-from src.api.models.goods import Goods
+from src.api.models import Goods
 from src.api.schemas.all_schemas import goods_schema, list_goods_schema
 from src.api.utils.database import db
 

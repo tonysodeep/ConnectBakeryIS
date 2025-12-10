@@ -1,5 +1,5 @@
 # Imports the models only AFTER they are all registered via models.__init__
-from src.api.models import Supplier, Goods, Invoice, InvoiceGoods
+from src.api.models import Supplier, Goods, Invoice, InvoiceGoods, Stock
 from src.api.utils.database import db
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 from marshmallow import EXCLUDE, fields
@@ -44,7 +44,7 @@ class SupplierSchema(SQLAlchemyAutoSchema):
     )
     invoices = fields.List(fields.Nested(
         'InvoiceSchema',
-        only=['id', 'list_of_bought_goods']
+        only=['code', 'created_date', 'list_of_bought_goods']
     ))
 
     class Meta:
@@ -109,6 +109,18 @@ class InvoiceGoodsSchema(SQLAlchemyAutoSchema):
         unknown = EXCLUDE
 
 
+class StockSchema(SQLAlchemyAutoSchema):
+    class Meta:
+        ordered = True
+        model = Stock
+        load_instance = True
+        fields = ('id', 'code')
+        dump_only = ('id',)
+        include_fk = True
+        sqla_session = db.session
+        unknown = EXCLUDE
+
+
 supplier_schema = SupplierSchema()
 suppliers_schema = SupplierSchema(many=True)
 goods_schema = GoodsSchema()
@@ -117,3 +129,5 @@ invoice_schema = InvoiceSchema()
 invoices_schema = InvoiceSchema(many=True)
 invoice_goods_schema = InvoiceGoodsSchema()
 list_invoice_goods_schema = InvoiceGoodsSchema(many=True)
+stock_schema = StockSchema()
+stocks_schema = StockSchema(many=True)
