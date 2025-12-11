@@ -188,9 +188,9 @@ class ReceiptRawMaterialSchema(SQLAlchemyAutoSchema):
 
 
 class RawMaterialSchema(SQLAlchemyAutoSchema):
-    category = fields.Nested(
-        'CategorySchema',
-        only=['name']
+    category_name = fields.Method(
+        "get_category_name",
+        dump_only=True,
     )
     movement_history = fields.List(fields.Nested(
         'ReceiptRawMaterialSchema',
@@ -202,11 +202,16 @@ class RawMaterialSchema(SQLAlchemyAutoSchema):
         model = RawMaterial
         load_instance = True
         fields = ('id', 'code', 'name',
-                  'default_unit', 'category_id', 'category', 'movement_history')
-        dump_only = ('id',)
+                  'default_unit', 'category_id', 'category_name', 'movement_history')
+        dump_only = ('id', 'category_name')
         include_fk = True
         sqla_session = db.session
         unknown = EXCLUDE
+
+    def get_category_name(self, raw_material_instance):
+        if raw_material_instance.category:
+            return raw_material_instance.category.name
+        return None
 
 
 supplier_schema = SupplierSchema()
@@ -217,5 +222,14 @@ invoice_schema = InvoiceSchema()
 invoices_schema = InvoiceSchema(many=True)
 invoice_goods_schema = InvoiceGoodsSchema()
 list_invoice_goods_schema = InvoiceGoodsSchema(many=True)
+
 stock_schema = StockSchema()
 stocks_schema = StockSchema(many=True)
+category_schema = CategorySchema()
+categories_schema = CategorySchema(many=True)
+receipt_schema = ReceiptSchema()
+receipts_schema = ReceiptSchema(many=True)
+raw_material_schema = RawMaterialSchema()
+raw_materials_schema = RawMaterialSchema(many=True)
+receipt_raw_material = ReceiptRawMaterialSchema()
+list_receipt_raw_material = ReceiptRawMaterialSchema(many=True)

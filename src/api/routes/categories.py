@@ -3,21 +3,21 @@ from marshmallow import ValidationError
 from src.api.utils.responses import response_with
 from src.api.utils import responses as resp
 from src.api.utils.database import db
-from src.api.models import Stock
-from src.api.schemas.all_schemas import stock_schema, stocks_schema
+from src.api.models import Category
+from src.api.schemas.all_schemas import categories_schema, category_schema
 
 
-stocks_routes = Blueprint("stocks_routes", __name__)
+categories_routes = Blueprint("categories_routes", __name__)
 
 
-@stocks_routes.route('/', methods=['POST'])
-def create_stock():
+@categories_routes.route('/', methods=['POST'])
+def create_categories():
     json_data = request.get_json()
     if json_data is None:
         return response_with(resp.INVALID_INPUT_422, message="No input data provided")
 
     is_many = isinstance(json_data, list)
-    schema_to_use = stocks_schema if is_many else stock_schema
+    schema_to_use = categories_schema if is_many else category_schema
     try:
         loaded_data = schema_to_use.load(json_data)
     except ValidationError as err:
@@ -27,20 +27,20 @@ def create_stock():
         print(f"Unexpected error during schema load: {err}")
         return response_with(resp.INVALID_INPUT_422, message="Internal processing error")
 
-    stocks_to_create = loaded_data if is_many else [loaded_data]
-    created_stock = []
+    categories_to_create = loaded_data if is_many else [loaded_data]
+    created_categories = []
     try:
-        for stock in stocks_to_create:
-            stock.create()
-            created_stock.append(stock)
+        for category in categories_to_create:
+            category.create()
+            created_categories.append(category)
     except Exception as e:
         print(f"Database error during creation: {e}")
         return response_with(resp.INVALID_INPUT_422, message="Database creation error")
-    return stocks_schema.dump(created_stock), 201
+    return categories_schema.dump(created_categories), 201
 
 
-@stocks_routes.route('/', methods=['GET'])
-def get_stocks_list():
-    fetched = db.session.execute(db.select(Stock)).scalars().all()
-    output = stocks_schema.dump(fetched)
+@categories_routes.route('/', methods=['GET'])
+def get_categories_list():
+    fetched = db.session.execute(db.select(Category)).scalars().all()
+    output = categories_schema.dump(fetched)
     return output, 201
