@@ -52,7 +52,7 @@ jobs:
           ssh -p ${{ env.SSH_PORT }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ env.SSH_USER }}@${{ env.SSH_HOST }} << 'EOF'
             
             cd ${{ env.DEPLOY_PATH }}
-            
+            docker compose down --remove-orphans
             echo "Building and restarting Docker services..."
             docker compose up -d --build --force-recreate 
             
