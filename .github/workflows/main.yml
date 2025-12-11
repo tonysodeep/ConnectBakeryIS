@@ -36,23 +36,24 @@ jobs:
           DEPLOY_PATH: /home/${{ secrets.SSH_USER }}/ConnectBakeryIS # Corrected DEPLOY_PATH 
         run: |
           # 1. Ensure the deployment path exists on the server
+          echo "Checking deployment path on server..."
           ssh -o StrictHostKeyChecking=no -p ${{ env.SSH_PORT }} ${{ env.SSH_USER }}@${{ env.SSH_HOST }} "mkdir -p ${{ env.DEPLOY_PATH }}"
 
-          # 2. Copy all files (including .env) from the runner to the server using SCP
-          # NOTE: The -P flag must be capitalized for scp.
-          echo "Copying code and .env file to server..."
+          # 2. Copy the .env file explicitly
+          echo "Copying .env file explicitly to server..."
+          scp -P ${{ env.SSH_PORT }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ./.env ${{ env.SSH_USER }}@${{ env.SSH_HOST }}:${{ env.DEPLOY_PATH }}/.env
+
+          # 3. Copy all NON-HIDDEN files (your app code, docker-compose.yml, init.sql, etc.)
+          echo "Copying application code and configs to server..."
           scp -r -P ${{ env.SSH_PORT }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ./* ${{ env.SSH_USER }}@${{ env.SSH_HOST }}:${{ env.DEPLOY_PATH }}
 
-          # 3. Run the Docker commands on the server via SSH
+          # 4. Run the Docker commands on the server via SSH
           echo "Executing Docker commands on server..."
           ssh -p ${{ env.SSH_PORT }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ env.SSH_USER }}@${{ env.SSH_HOST }} << 'EOF'
             
             cd ${{ env.DEPLOY_PATH }}
             
             echo "Building and restarting Docker services..."
-            # -d: run in detached mode
-            # --build: rebuilds images
-            # --force-recreate: forces container recreation
             docker compose up -d --build --force-recreate 
             
             echo "Deployment complete!"
