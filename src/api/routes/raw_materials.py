@@ -1,8 +1,9 @@
+import logging
 from flask import Blueprint, request
 from src.api.utils.responses import response_with
 from src.api.utils import responses as resp
-from src.api.models import Goods, InvoiceGoods, RawMaterial
-from sqlalchemy import func, Float
+from src.api.models import Goods, InvoiceGoods, RawMaterial, ReceiptRawMaterial
+from sqlalchemy import func, Float, select
 from src.api.utils.database import db
 from src.api.schemas.all_schemas import raw_material_schema, raw_materials_schema
 from marshmallow import ValidationError
@@ -99,9 +100,43 @@ def create_raw_material():
 
 @raw_material_routes.route('/', methods=['GET'])
 def get_raw_materials():
-    fetched = db.session.execute(db.select(RawMaterial)).scalars().all()
-    output = raw_materials_schema.dump(fetched)
-    return output, 201
+    fetched_raw_materials = db.session.execute(
+        db.select(RawMaterial)).scalars().all()
+    try:
+        results = db.session.execute(
+            db.select(
+                RawMaterial.code,
+                func.round(func.sum(ReceiptRawMaterial.quantity.cast(
+                    Float)).label('total_stock_quantity'), 3)
+            )
+            .join(ReceiptRawMaterial, RawMaterial.id == ReceiptRawMaterial.raw_material_id, isouter=True)
+            .group_by(RawMaterial.code)
+        ).all()
+    except Exception as e:
+        logging.error(
+            f"Error fetching aggregated stock for raw materials: {e}")
+        results = []
+
+    # { "BAKINGSODA": "0.954", "BOLAT-0001": "1.0", ... }
+    stock_map = {}
+    for code, total_quantity in results:
+        quantity_str = str(
+            total_quantity) if total_quantity is not None else None
+        stock_map[code] = quantity_str
+
+    final_output = []
+    for raw_material in fetched_raw_materials:
+        # Dump the base data using the single item schema
+        raw_material_data = raw_material_schema.dump(raw_material)
+        # Get the code from the dumped data (or directly from raw_material.code)
+        material_code = raw_material_data.get('code')
+        # Look up the quantity using the code. Default to None if no receipts were found.
+        stock_qty = stock_map.get(material_code, None)
+        # --- CRITICAL FIX 2: Assign the single value found in the map ---
+        raw_material_data['total_stock_quantity'] = stock_qty
+        final_output.append(raw_material_data)
+
+    return final_output, 200
 
 
 @raw_material_routes.route('/<int:id>', methods=['GET'])
@@ -109,9 +144,28 @@ def get_raw_material_by_id(id):
     raw_material = db.session.get(RawMaterial, id)
     if raw_material is None:
         return response_with(resp.SERVER_ERROR_404, message=f"Raw Material with id {id} not found")
+    stock_qty = None
+    try:
+        result_row = db.session.execute(
+            select(
+                func.round(func.sum(ReceiptRawMaterial.quantity.cast(Float)), 3).label(
+                    'total_stock_quantity')
+            )
+            .join(RawMaterial, RawMaterial.id == ReceiptRawMaterial.raw_material_id, isouter=True)
+            .where(RawMaterial.id == id)
+            # Grouping is technically unnecessary here but doesn't hurt
+            .group_by(RawMaterial.code)
+        ).scalar_one_or_none()  # Executes and gets the single calculated value
+        if result_row is not None:
+            # result_row is the scalar value (the rounded sum)
+            stock_qty = str(result_row)
+    except Exception as e:
+        logging.error(
+            f"Error fetching aggregated stock for raw materials: {e}")
 
-    output = raw_material_schema.dump(raw_material)
-    return output, 200
+    raw_material_data = raw_material_schema.dump(raw_material)
+    raw_material_data['total_stock_quantity'] = stock_qty
+    return raw_material_data, 200
 
 
 @raw_material_routes.route('/<int:id>', methods=['PUT'])

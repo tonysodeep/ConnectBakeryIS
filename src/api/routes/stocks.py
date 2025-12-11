@@ -75,7 +75,6 @@ def get_stocks():
 
     final_output = []
     for stock in fetched_stocks:
-        print(f'stock {stock}')
         stock_data = stock_schema.dump(stock)
         stock_code = stock_data.get('stock_code')
         stock_data['stock_item'] = stock_quantities_map.get(stock_code, [])
