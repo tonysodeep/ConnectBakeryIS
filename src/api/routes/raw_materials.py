@@ -3,7 +3,7 @@ from flask import Blueprint, request
 from src.api.utils.responses import response_with
 from src.api.utils import responses as resp
 from src.api.models import Goods, InvoiceGoods, RawMaterial, ReceiptRawMaterial
-from sqlalchemy import func, Float, select
+from sqlalchemy import func, Float, select, Integer
 from src.api.utils.database import db
 from src.api.schemas.all_schemas import raw_material_schema, raw_materials_schema
 from marshmallow import ValidationError
@@ -18,8 +18,13 @@ def get_raw_materials_buying_prices():
         results = db.session.execute(
             db.select(
                 Goods.material_code,
-                func.avg(InvoiceGoods.buying_price_per_unit.cast(
-                    Float)).label('average_price')
+                func.cast(
+                    func.round(
+                        func.avg(InvoiceGoods.buying_price_per_unit.cast(
+                            Float)).label('average_price'),
+                    ),
+                    Integer
+                )
             )
             .join(InvoiceGoods, Goods.id == InvoiceGoods.goods_id, isouter=True)
             .group_by(Goods.material_code)
