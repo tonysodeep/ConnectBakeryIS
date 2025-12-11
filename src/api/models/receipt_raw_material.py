@@ -15,6 +15,12 @@ class ReceiptRawMaterial(db.Model):
         ForeignKey('raw_materials.id'))
     quantity: Mapped[Decimal] = mapped_column(
         DECIMAL(precision=10, scale=3), nullable=False)
+    receipt: Mapped['Receipt'] = relationship(  # type: ignore
+        back_populates='list_of_raw_materials',
+    )
+    raw_material: Mapped['RawMaterial'] = relationship(  # type: ignore
+        back_populates='movement_history'
+    )
 
     def __init__(self, receipt_id, raw_material_id, quantity):
         self.receipt_id = receipt_id

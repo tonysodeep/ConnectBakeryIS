@@ -1,6 +1,7 @@
+from typing import List
 from src.api.utils.database import db
 from datetime import date
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, ForeignKey, Date, func
 
 
@@ -19,6 +20,14 @@ class Receipt(db.Model):
     )
     stock_id: Mapped[int] = mapped_column(
         ForeignKey('stocks.id'), nullable=False
+    )
+    stock: Mapped['Stock'] = relationship(  # type: ignore
+        'Stock',
+        back_populates='receipts'
+    )
+    list_of_raw_materials: Mapped[List['ReceiptRawMaterial']] = relationship(  # type: ignore
+        back_populates='receipt',
+        cascade="all, delete-orphan"
     )
 
     def __init__(self, receipt_code, stock_id, created_date, request_code=None):

@@ -26,7 +26,7 @@ app.register_blueprint(goods_routes,
                        url_prefix='/api/goods')
 app.register_blueprint(invoice_routes, url_prefix='/api/invoices')
 app.register_blueprint(raw_material_routes, url_prefix='/api/raw-materials')
-app.register_blueprint(stocks_routes, url_prefix='/api/stock')
+app.register_blueprint(stocks_routes, url_prefix='/api/stocks')
 
 
 @app.after_request

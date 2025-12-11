@@ -3,3 +3,7 @@ from .goods import Goods
 from .invoices import Invoice
 from .invoices_goods import InvoiceGoods
 from .stocks import Stock
+from .raw_materials import RawMaterial
+from .categories import Category
+from .receipts import Receipt
+from .receipt_raw_material import ReceiptRawMaterial

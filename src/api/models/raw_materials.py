@@ -1,5 +1,5 @@
 from src.api.utils.database import db
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, ForeignKey
 
 
@@ -12,7 +12,15 @@ class RawMaterial(db.Model):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     default_unit: Mapped[str] = mapped_column(String(10), nullable=False)
     category_id: Mapped[int] = mapped_column(
-        ForeignKey('categories.id'), nullable=True, ondelete="SET NULL"
+        ForeignKey('categories.id', ondelete="SET NULL"),
+        nullable=True,
+    )
+    category: Mapped['Category'] = relationship(  # type: ignore
+        'Category',
+        back_populates='raw_materials'
+    )
+    movement_history: Mapped[list['ReceiptRawMaterial']] = relationship(  # type: ignore
+        back_populates='raw_material'
     )
 
     def __init__(self, code, name, default_unit, category_id=None):
