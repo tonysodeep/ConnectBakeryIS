@@ -1,3 +1,4 @@
+import logging
 from flask import Blueprint, request
 from marshmallow import ValidationError
 from src.api.utils.responses import response_with
@@ -42,9 +43,45 @@ def create_stock():
 
 @stocks_routes.route('/', methods=['GET'])
 def get_stocks():
-    fetched = db.session.execute(db.select(Stock)).scalars().all()
-    output = stocks_schema.dump(fetched)
-    return output, 201
+    fetched_stocks = db.session.execute(db.select(Stock)).scalars().all()
+    try:
+        results = db.session.execute(
+            select(
+                Stock.stock_code,
+                RawMaterial.code.label('material_code'),
+                func.round(
+                    func.sum(ReceiptRawMaterial.quantity.cast(Float)),
+                    3
+                ).label('total_stock_quantity')
+            )
+            .join(RawMaterial, RawMaterial.id == ReceiptRawMaterial.raw_material_id, isouter=True)
+            .join(Receipt, Receipt.id == ReceiptRawMaterial.receipt_id)
+            .join(Stock, Stock.id == Receipt.stock_id)
+            .group_by(Stock.stock_code, RawMaterial.code)
+        ).all()
+    except Exception as e:
+        logging.error(f"Error fetching aggregated stock: {e}")
+
+    stock_quantities_map = {}
+    for stock_code, material_code, total_quantity in results:
+        quantity_str = str(
+            total_quantity) if total_quantity is not None else None
+        if stock_code not in stock_quantities_map:
+            stock_quantities_map[stock_code] = []
+        stock_quantities_map[stock_code].append({
+            "material_code": material_code,
+            "total_stock_quantity": quantity_str
+        })
+
+    final_output = []
+    for stock in fetched_stocks:
+        print(f'stock {stock}')
+        stock_data = stock_schema.dump(stock)
+        stock_code = stock_data.get('stock_code')
+        stock_data['stock_item'] = stock_quantities_map.get(stock_code, [])
+        final_output.append(stock_data)
+
+    return final_output, 200
 
 
 @stocks_routes.route('/<int:id>', methods=['GET'])
@@ -53,8 +90,36 @@ def get_stock_by_id(id):
     if stock is None:
         return response_with(resp.SERVER_ERROR_404, message=f"Stock with id {id} not found")
 
-    output = stock_schema.dump(stock)
-    return output, 200
+    stock_items_list = []
+    try:
+        results = db.session.execute(
+            select(
+                RawMaterial.code.label('material_code'),
+                func.round(
+                    func.sum(ReceiptRawMaterial.quantity.cast(Float)),
+                    3
+                ).label('total_stock_quantity')
+            )
+            .join(RawMaterial, RawMaterial.id == ReceiptRawMaterial.raw_material_id, isouter=True)
+            .join(Receipt, Receipt.id == ReceiptRawMaterial.receipt_id)
+            .join(Stock, Stock.id == Receipt.stock_id)
+            .where(Stock.id == id)
+            .group_by(RawMaterial.code)
+        ).all()
+        for material_code, total_quantity in results:
+            quantity_str = str(
+                total_quantity) if total_quantity is not None else None
+
+            stock_items_list.append({
+                "material_code": material_code,
+                "total_stock_quantity": quantity_str
+            })
+    except Exception as e:
+        logging.error(f"Error fetching aggregated stock for ID {id}: {e}")
+
+    stock_data = stock_schema.dump(stock)
+    stock_data['stock_item'] = stock_items_list
+    return stock_data, 200
 
 
 @stocks_routes.route('/<int:id>', methods=['PUT'])
@@ -122,68 +187,3 @@ def update_stock_by_list():
 
     output = stocks_schema.dump(updated_stocks_list)
     return output, 200
-
-
-@stocks_routes.route('/raw-material-stock/', methods=['GET'])
-def get_raw_materials_stock():
-    try:
-        results = db.session.execute(
-            select(
-                Stock.stock_code,
-                RawMaterial.code.label('material_code'),
-                func.round(
-                    func.sum(ReceiptRawMaterial.quantity.cast(Float)),
-                    3
-                ).label('total_stock_quantity')
-            )
-            # --- JOIN 1: RawMaterial to Association Table ---
-            # We start the joins from the association table or a central table
-            # Since the goal is Stock Quantity PER Raw Material PER Stock
-            .join(
-                RawMaterial,
-                RawMaterial.id == ReceiptRawMaterial.raw_material_id,  # Use raw_material_id
-                isouter=True
-            )
-            # --- JOIN 2: Association Table to Receipt (The Receipt has the Stock FK) ---
-            .join(Receipt, Receipt.id == ReceiptRawMaterial.receipt_id)
-
-            # --- JOIN 3: Receipt to Stock (The Stock has the Receipt relationship) ---
-            # Assuming Receipt model has a 'stock_id' column
-            .join(Stock, Stock.id == Receipt.stock_id)
-
-            # --- CRITICAL FIX: Group by ALL selected non-aggregate fields ---
-            .group_by(
-                Stock.stock_code,
-                RawMaterial.code
-            )
-        ).all()
-        grouped_stock = {}
-        for stock_code, material_code, total_quantity in results:
-            # Convert quantity to string or None immediately
-            quantity_str = str(
-                total_quantity) if total_quantity is not None else None
-
-            # Define the item structure
-            stock_item = {
-                "material_code": material_code,
-                "total_stock_quantity": quantity_str
-            }
-
-            # If the stock_code is not yet a key in the dictionary, initialize it
-            if stock_code not in grouped_stock:
-                grouped_stock[stock_code] = {
-                    "stock_code": stock_code,
-                    "stock_item": []  # Array to hold the list of materials
-                }
-
-            # Append the material details to the corresponding stock_code's array
-            grouped_stock[stock_code]["stock_item"].append(stock_item)
-
-        # 3. Final Response Formatting
-        # Convert the dictionary values back into a list for the final JSON array
-        response_data = list(grouped_stock.values())
-        return response_data, 200
-
-    except Exception as e:
-        print(f"Database query error: {e}")
-        return response_with(resp.SERVER_ERROR_500, message="An error occurred during stock calculation.")
