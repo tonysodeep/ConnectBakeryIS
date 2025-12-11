@@ -98,7 +98,84 @@ def create_raw_material():
 
 
 @raw_material_routes.route('/', methods=['GET'])
-def get_raw_materials_list():
+def get_raw_materials():
     fetched = db.session.execute(db.select(RawMaterial)).scalars().all()
     output = raw_materials_schema.dump(fetched)
     return output, 201
+
+
+@raw_material_routes.route('/<int:id>', methods=['GET'])
+def get_raw_material_by_id(id):
+    raw_material = db.session.get(RawMaterial, id)
+    if raw_material is None:
+        return response_with(resp.SERVER_ERROR_404, message=f"Raw Material with id {id} not found")
+
+    output = raw_material_schema.dump(raw_material)
+    return output, 200
+
+
+@raw_material_routes.route('/<int:id>', methods=['PUT'])
+def update_raw_material_by_id(id):
+    json_data = request.get_json()
+    if json_data is None:
+        return response_with(resp.INVALID_INPUT_422, message="No input data provided")
+
+    existing_raw_material = db.session.get(RawMaterial, id)
+    if existing_raw_material is None:
+        return response_with(resp.SERVER_ERROR_404, message=f"Raw material with id {id} not found")
+
+    try:
+        updated_raw_material_instance = raw_material_schema.load(
+            json_data,
+            instance=existing_raw_material,
+            partial=True
+        )
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Database error during creation: {e}")
+        return response_with(resp.INVALID_INPUT_422, message="Database creation error")
+
+    output = raw_material_schema.dump(updated_raw_material_instance)
+    return output, 200
+
+
+@raw_material_routes.route('/', methods=['PUT'])
+def update_raw_material_by_list():
+    json_data = request.get_json()
+    if not isinstance(json_data, list):
+        return response_with(resp.INVALID_INPUT_422, message="Expected a list of raw material for bulk update.")
+
+    if not json_data:
+        return response_with(resp.INVALID_INPUT_422, message="Input list is empty.")
+
+    updated_raw_material_list = []
+    try:
+        for item_data in json_data:
+            raw_material_id = item_data.get('id')
+            if raw_material_id is None:
+                db.session.rollback()
+                return response_with(resp.INVALID_INPUT_422, message=f"Missing 'id' field in one of the raw material objects.")
+
+            existing_raw_materials = db.session.get(
+                RawMaterial, raw_material_id)
+            if existing_raw_materials is None:
+                db.session.rollback()
+                return response_with(resp.SERVER_ERROR_404,
+                                     message=f"raw material with id {raw_material_id} not found, aborting bulk update.")
+
+            updated_raw_materials = raw_material_schema.load(
+                item_data,
+                instance=existing_raw_materials,
+                partial=True
+            )
+            updated_raw_material_list.append(updated_raw_materials)
+
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Database error during bulk update: {e}")
+        return response_with(resp.INVALID_INPUT_422, message=f"Database update error: {str(e)}")
+
+    output = raw_materials_schema.dump(updated_raw_material_list)
+    return output, 200

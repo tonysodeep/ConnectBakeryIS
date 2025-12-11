@@ -50,14 +50,24 @@ def create_invoice():
     return response_with(resp.SUCCESS_201, value=invoice_schema.dump(loaded_invoice_data))
 
 
-@invoice_routes.route('/', methods=['get'])
+@invoice_routes.route('/', methods=['GET'])
 def get_inoivces():
     fetched = db.session.execute(db.select(Invoice)).scalars().all()
     output = invoices_schema.dump(fetched)
     return output, 201
 
 
-@invoice_routes.route('/<int:id>', methods=['put'])
+@invoice_routes.route('/<int:id>', methods=['GET'])
+def get_inoivce_by_id(id):
+    invoice = db.session.get(Invoice, id)
+    if invoice is None:
+        return response_with(resp.SERVER_ERROR_404, message=f"Goods with id {id} not found")
+
+    output = invoice_schema.dump(invoice)
+    return output, 200
+
+
+@invoice_routes.route('/<int:id>', methods=['PUT'])
 def update_invoice_by_id(id):
     json_data = request.get_json()
     if json_data is None:
