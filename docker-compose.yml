@@ -1,0 +1,48 @@
+services:
+  api:
+    build: .
+    container_name: connect_bakery_api
+    ports:
+      - "20569:5000"
+    depends_on:
+      mysql_db_service:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql_db_service
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_PORT: ${DB_PORT}
+      WORK_ENV: ${WORK_ENV}
+
+  mysql_db_service:
+    image: mysql:8.0
+    container_name: connect_bakery_db
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: PMS
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${DB_ROOT_PASSWORD}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db_data:

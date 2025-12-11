@@ -1,0 +1,26 @@
+# Ignore compiled Python files
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore the virtual environment folder (if it exists)
+venv
+.venv
+env
+.env
+
+# Ignore configuration and metadata files
+.dockerignore
+.git
+.gitignore
+.editorconfig
+.vscode
+
+# Ignore application-specific log files
+# Based on your main.py:
+app_activity.log
+
+# Ignore testing/documentation/miscellaneous files if they are large and unnecessary at runtime
+tests/
+docs/
