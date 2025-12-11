@@ -22,7 +22,7 @@ class ReceiptRawMaterial(db.Model):
         back_populates='movement_history'
     )
 
-    def __init__(self, receipt_id, raw_material_id, quantity):
+    def __init__(self, raw_material_id, quantity, receipt_id=None):
         self.receipt_id = receipt_id
         self.raw_material_id = raw_material_id
         self.quantity = quantity

@@ -4,7 +4,7 @@ from src.api.utils.responses import response_with
 from src.api.utils import responses as resp
 from src.api.utils.database import db
 from src.api.models import Receipt
-from src.api.schemas.all_schemas import receipt_schema, receipts_schema
+from src.api.schemas.all_schemas import receipt_schema, receipts_schema, receipt_raw_material_schema, list_receipt_raw_material_schema
 
 
 receipts_routes = Blueprint("receipts_routes", __name__)
@@ -16,27 +16,39 @@ def create_receipts():
     if json_data is None:
         return response_with(resp.INVALID_INPUT_422, message="No input data provided")
 
-    is_many = isinstance(json_data, list)
-    schema_to_use = receipts_schema if is_many else receipt_schema
+    receipt_data = json_data.get('receipt')
+    list_of_raw_materials = json_data.get('list_of_raw_materials')
+    if not receipt_data or not list_of_raw_materials:
+        return response_with(response_with(resp.INVALID_INPUT_422, message="Missing 'receipt_data' or 'list_of_raw_materials' data"))
+
     try:
-        loaded_data = schema_to_use.load(json_data)
+        loaded_receipt_data = receipt_schema.load(receipt_data)
+        loaded_receipt_raw_materials_data = list_receipt_raw_material_schema.load(
+            list_of_raw_materials
+        )
     except ValidationError as err:
         print(err.messages)
-        return response_with(resp.INVALID_INPUT_422, message="Validation error")
+        return response_with(resp.INVALID_INPUT_422, message=f"Validation error: {err.messages}")
     except Exception as err:
         print(f"Unexpected error during schema load: {err}")
         return response_with(resp.INVALID_INPUT_422, message="Internal processing error")
 
-    receipts_to_create = loaded_data if is_many else [loaded_data]
-    created_receipts = []
     try:
-        for receipt in receipts_to_create:
-            receipt.create()
-            created_receipts.append(receipt)
+        db.session.begin_nested()
+        db.session.add(loaded_receipt_data)
+        db.session.flush()
+        new_receipt_id = loaded_receipt_data.id
+        for receipt_raw_material in loaded_receipt_raw_materials_data:
+            receipt_raw_material.receipt_id = new_receipt_id
+            db.session.add(receipt_raw_material)
+
+        db.session.commit()
     except Exception as e:
+        db.session.rollback()
         print(f"Database error during creation: {e}")
         return response_with(resp.INVALID_INPUT_422, message="Database creation error")
-    return receipts_schema.dump(created_receipts), 201
+
+    return response_with(resp.SUCCESS_201, value=receipt_raw_material_schema.dump(loaded_receipt_data))
 
 
 @receipts_routes.route('/', methods=['GET'])

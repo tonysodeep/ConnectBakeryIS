@@ -166,13 +166,15 @@ class ReceiptSchema(SQLAlchemyAutoSchema):
 
 
 class ReceiptRawMaterialSchema(SQLAlchemyAutoSchema):
+    quantity = DecimalToString(as_string=True)
+    receipt_id = fields.Integer(required=False, load_only=True)
     receipt = fields.Nested(
         'ReceiptSchema',
         only=['receipt_code', 'created_date', 'stock']
     )
     raw_material = fields.Nested(
         'RawMaterialSchema',
-        only=['code', 'name', 'category']
+        only=['code', 'name', 'category_name']
     )
 
     class Meta:
@@ -231,5 +233,5 @@ receipt_schema = ReceiptSchema()
 receipts_schema = ReceiptSchema(many=True)
 raw_material_schema = RawMaterialSchema()
 raw_materials_schema = RawMaterialSchema(many=True)
-receipt_raw_material = ReceiptRawMaterialSchema()
-list_receipt_raw_material = ReceiptRawMaterialSchema(many=True)
+receipt_raw_material_schema = ReceiptRawMaterialSchema()
+list_receipt_raw_material_schema = ReceiptRawMaterialSchema(many=True)
